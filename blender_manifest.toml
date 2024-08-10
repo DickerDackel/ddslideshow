@@ -1,0 +1,15 @@
+schema_version = "1.0.0"
+
+id = "ddslideshow"
+version = "0.0.1"
+name = "DDSlideshow"
+tagline = "Create a Ken Burns Effect slideshow"
+maintainer = "Michael Lamertz <michael.lamertz@gmail.com"
+type = "add-on"
+website = "https://github.com/dickerdackel/ddslideshow/"
+tags = ["Sequencer"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-2.0-or-later"]
+
+[permissions]
+files = "Required to load images for the slideshow"
