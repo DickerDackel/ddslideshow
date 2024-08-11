@@ -34,8 +34,6 @@ class SEQUENCE_EDITOR_PT_settings(Panel):
         scene = context.scene
         ddslideshow = scene.ddslideshow
 
-        layout.operator('ddslideshow.create_slideshow', text='Generate')
-
         layout.label(text='Media')
 
         layout.prop(ddslideshow, 'intro')
@@ -67,11 +65,10 @@ class SEQUENCE_EDITOR_PT_settings(Panel):
         row = col.row()
         row.prop(ddslideshow, 'zoom_from')
         row.prop(ddslideshow, 'zoom_to')
-        row.prop(ddslideshow, 'zoom_random')
 
         col = layout.column()
         row = col.row()
-        row.prop(ddslideshow, 'zoom_random')
+        row.prop(ddslideshow, 'zoom_randomize')
 
         col = layout.column()
         row = col.row()

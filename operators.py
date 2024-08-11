@@ -1,19 +1,23 @@
 import os.path
 
+from random import choice
+from itertools import cycle
+
 import bpy
 
 from bpy.types import Operator, OperatorFileListElement
-from bpy.props import StringProperty, CollectionProperty
+from bpy.props import CollectionProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 
-from .utils import create_transform, crossfade, grep, load_image, apply_zoom
+from .utils import (apply_pan, apply_zoom, create_transform, crossfade, grep, load_image)
 
 OP_PREFIX = 'ddslideshow'
 
 
+# If somebody could pretty please explain to me, how to properly call the
+# load_images operator from create_slideshow?
 def shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(file_collection, directory, context):
-    scene = context.scene
-    ddslideshow = scene.ddslideshow
+    ddslideshow = context.scene.ddslideshow
     fps = context.scene.render.fps
 
     intro = bpy.path.abspath(ddslideshow.intro)
@@ -50,25 +54,38 @@ class SEQUENCE_EDITOR_OT_create_slideshow(Operator, ImportHelper):
             for strip in sequence:
                 strip.select = value
 
+        ddslideshow = context.scene.ddslideshow
+        has_intro = ddslideshow.intro not in ['', '//']
+        has_outro = ddslideshow.outro not in ['', '//']
+
         shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(self.files, self.directory, context)
 
-        set_select(bpy.context.scene.sequence_editor.sequences, False)
-        set_select(grep(bpy.context.scene.sequence_editor.sequences, 'IMAGE'), True)
+        set_select(context.sequences, False)
+        set_select(grep(context.sequences, 'IMAGE'), True)
         bpy.ops.ddslideshow.overlap_images('INVOKE_DEFAULT')
+
+        set_select(context.sequences, False)
+        set_select(grep(context.sequences, 'IMAGE'), True)
         bpy.ops.ddslideshow.add_transforms('INVOKE_DEFAULT')
 
-        set_select(bpy.context.scene.sequence_editor.sequences, False)
-        set_select(grep(bpy.context.scene.sequence_editor.sequences, 'TRANSFORM'), True)
-        bpy.ops.ddslideshow.zoom_transforms('INVOKE_DEFAULT')
-        # bpy.ops.ddslideshow.pan_transforms('INVOKE_DEFAULT')
+        set_select(context.sequences, False)
+        selected = list(grep(context.sequences, 'TRANSFORM'))
+        start = 1 if has_intro else 0
+        end = -1 if has_outro else len(selected)
+        set_select(selected[start:end], True)
 
-        set_select(bpy.context.scene.sequence_editor.sequences, False)
-        set_select(grep(bpy.context.scene.sequence_editor.sequences, 'TRANSFORM'), True)
+        bpy.ops.ddslideshow.zoom_transforms('INVOKE_DEFAULT')
+        bpy.ops.ddslideshow.pan_transforms('INVOKE_DEFAULT')
+
+        set_select(context.sequences, False)
+        set_select(grep(context.sequences, 'TRANSFORM'), True)
         bpy.ops.ddslideshow.crossfade('INVOKE_DEFAULT')
 
-        set_select(bpy.context.scene.sequence_editor.sequences, False)
+        set_select(context.sequences, False)
         bpy.ops.ddslideshow.slideshow_fade_in_out('INVOKE_DEFAULT')
-        bpy.ops.ddslideshow.audio_fade_in_out('INVOKE_DEFAULT')
+
+        if bpy.ops.ddslideshow.audio_fade_in_out.poll():
+            bpy.ops.ddslideshow.audio_fade_in_out('INVOKE_DEFAULT')
 
         return {'FINISHED'}
 
@@ -95,13 +112,13 @@ class SEQUENCE_EDITOR_OT_overlap_images(Operator):
 
     @classmethod
     def poll(cls, context):
-        if not context.selected_sequences: return False  # noqa: E701
+        selected = context.selected_sequences
 
-        return all(strip.type == 'IMAGE' for strip in context.selected_sequences)
+        return (selected
+                and all(strip.type == 'IMAGE' for strip in selected))
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
         fps = context.scene.render.fps
 
         slide_duration = int(ddslideshow.slide_duration * fps)
@@ -135,9 +152,10 @@ class SEQUENCE_EDITOR_OT_add_transforms(Operator):
 
     @classmethod
     def poll(cls, context):
-        if not context.selected_sequences: return False  # noqa: E701
+        selected = context.selected_sequences
 
-        return all(strip.type == 'IMAGE' for strip in context.selected_sequences)
+        return (selected
+                and all(strip.type == 'IMAGE' for strip in selected))
 
     def execute(self, context):
         for strip in context.selected_sequences:
@@ -152,27 +170,20 @@ class SEQUENCE_EDITOR_OT_zoom_transforms(Operator):
 
     @classmethod
     def poll(cls, context):
-        if not context.selected_sequences: return False  # noqa: E701
+        selected = context.selected_sequences
 
-        return all(strip.type == 'TRANSFORM' for strip in context.selected_sequences)
+        return (selected
+                and all(strip.type == 'TRANSFORM' for strip in selected))
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
 
-        intro = ddslideshow.intro
-        outro = ddslideshow.outro
         zoom_from = ddslideshow.zoom_from
         zoom_to = ddslideshow.zoom_to
-        zoom_random = ddslideshow.zoom_random
+        zoom_randomize = ddslideshow.zoom_randomize
 
-        seqs = context.selected_sequences
-        seqlen = len(seqs)
-        start = 1 if intro else 0
-        end = seqlen - 1 if outro else seqlen
-
-        for strip in seqs[start:end]:
-            apply_zoom(strip, zoom_from, zoom_to, zoom_random)
+        for strip in context.selected_sequences:
+            apply_zoom(strip, zoom_from, zoom_to, zoom_randomize)
 
         return {'FINISHED'}
 
@@ -183,18 +194,43 @@ class SEQUENCE_EDITOR_OT_pan_transforms(Operator):
 
     @classmethod
     def poll(cls, context):
-        if not context.selected_sequences: return False  # noqa: E701
+        selected = context.selected_sequences
 
-        return all(strip.type == 'TRANSFORM' for strip in context.selected_sequences)
+        return (selected
+                and all(strip.type == 'TRANSFORM' for strip in selected)
+                and all('zoom_from' in strip for strip in selected)
+                and all('zoom_to' in strip for strip in selected))
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
 
-        ...
+        pan_config = ddslideshow.pan
+
+        selected = context.selected_sequences
+        slen = len(selected)
+
+        pan_directions = {'nw': (1, -1), 'n': (0, -1), 'ne': (-1, -1),
+                          'w': (1, 0), '0': (0, 0), 'e': (-1, 0),
+                          'sw': (1, 1), 's': (0, 1), 'se': (-1, 1)}
+        cw = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+        ccw = reversed(cw)
+
+        if pan_config == 'off':
+            positions = [pan_directions['0'] for _ in range(slen)]
+        elif pan_config == 'randomize':
+            directions = list(pan_directions.values())
+            positions = [choice(directions) for _ in range(slen)]
+        elif pan_config == 'cw':
+            positions = [pan_directions[key] for key, _ in zip(cycle(cw), range(slen))]
+        elif pan_config == 'ccw':
+            positions = [pan_directions[key] for key, _ in zip(cycle(ccw), range(slen))]
+        elif pan_config in pan_directions:
+            positions = [pan_directions[pan_config] for _ in  range(slen)]
+
+        for strip, (dx, dy) in zip(selected, positions):
+            apply_pan(strip, dx, dy, strip['zoom_from'], strip['zoom_to'])
 
         return {'FINISHED'}
-        ...
 
 
 class SEQUENCE_EDITOR_OT_crossfade(Operator):
@@ -203,12 +239,10 @@ class SEQUENCE_EDITOR_OT_crossfade(Operator):
 
     @classmethod
     def poll(cls, context):
-        return True  # FIXME
         return bool(context.selected_sequences)
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
         fps = context.scene.render.fps
 
         slide_crossfade = ddslideshow.slide_crossfade * fps
@@ -224,8 +258,7 @@ class SEQUENCE_EDITOR_OT_slideshow_fade_in_out(Operator):
     bl_label = 'Slideshow fade in/out'
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
         fps = context.scene.render.fps
 
         slideshow_fade_in = ddslideshow.slideshow_fade_in * fps
@@ -259,8 +292,7 @@ class SEQUENCE_EDITOR_OT_audio_fade_in_out(Operator):
         return context.scene.ddslideshow.audio != ''
 
     def execute(self, context):
-        scene = context.scene
-        ddslideshow = scene.ddslideshow
+        ddslideshow = context.scene.ddslideshow
         fps = context.scene.render.fps
 
         audio = ddslideshow.audio

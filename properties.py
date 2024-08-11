@@ -12,12 +12,13 @@ class DDSlideshowProperties(bpy.types.PropertyGroup):
     slide_crossfade: FloatProperty(subtype='TIME', name='crossfade', default=3, min=0, soft_min=1, soft_max=5)
 
     zoom_from: FloatProperty(name='Zoom from', default=1, min=0, soft_max=2)
-    zoom_to: FloatProperty(name='Zoom to', default=1, min=0, soft_max=2)
-    zoom_random: BoolProperty(name='Randomize zoom direction', default=False)
+    zoom_to: FloatProperty(name='Zoom to', default=1.5, min=0, soft_max=2)
+    zoom_randomize: BoolProperty(name='Randomize zoom direction', default=True)
 
     pan: EnumProperty(name='Pan',
+                      default='randomize',
                       items=[('off', 'Off', ''),
-                             ('random', 'Random', ''),
+                             ('randomize', 'Randomize', ''),
                              ('cw', 'Clockwise', ''), ('ccw', 'Counter clockwise', ''),
                              ('nw', 'NW', ''), ('n', 'N', ''), ('ne', 'NE', ''),
                              ('w', 'W', ''), ('e', 'E', ''),
