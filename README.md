@@ -92,8 +92,11 @@ show.
 
 To do this, scroll through the timeline and find images where you want to
 change the zoom direction or the pan anchor.  Then select that specific image,
-configure zoom or pan and press `Apply zoom` and/or `Apply pan` again for this
+configure zoom or pan and press `Apply zoom` or `Apply pan` again for this
 single selected image.
+
+Note, since the calculation of the panning depends on the zoom, panning also
+needs to be re-applied when the zoom is changed.
 
 Repeat this until you're happy with the whole slideshow.
 
