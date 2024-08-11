@@ -160,19 +160,19 @@ each slide.
 
 **Pan** will select the direction of the panning.
 
-    **Off** - No panning
+**Off** - No panning
 
-    **NW**, **N**, **NE**,
-    **W**,  **0**, **E**,
-    **SW**, **S**, **SE** are anchor points that the image will pan towards.
+**NW**, **N**, **NE**,
+**W**,  **0**, **E**,
+**SW**, **S**, **SE** are anchor points that the image will pan towards.
 
-    **Randomize** will select a random direction from above for every slide.
+**Randomize** will select a random direction from above for every slide.
 
-    **Clockwise**, **Counter clockwise** will cycle through the anchors in the
-    given direction, starting with **N**.
+**Clockwise**, **Counter clockwise** will cycle through the anchors in the
+given direction, starting with **N**.
 
-    The behaviour of panning is dependent of the zoom settings
+The behaviour of panning is dependent of the zoom settings
 
-        - A zoom of 1 will disable both zooming and panning.
-        - A zoom <= 1 will always anchor the pan at the center of the screen
-        - A zoom > 1 will pan the image towards the configured anchor direction.
+- A zoom of 1 will disable both zooming and panning.
+- A zoom <= 1 will always anchor the pan at the center of the screen
+- A zoom > 1 will pan the image towards the configured anchor direction.
