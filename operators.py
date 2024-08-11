@@ -9,7 +9,9 @@ from bpy.types import Operator, OperatorFileListElement
 from bpy.props import CollectionProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 
-from .utils import (apply_pan, apply_zoom, create_transform, crossfade, grep, load_image)
+from .utils import (apply_pan, apply_zoom, create_transform, crossfade,
+                    deselect, grep, load_image, select,
+                    image_filter, transform_filter)
 
 OP_PREFIX = 'ddslideshow'
 
@@ -50,38 +52,34 @@ class SEQUENCE_EDITOR_OT_create_slideshow(Operator, ImportHelper):
     filter_glob: StringProperty(default='*.jpg;*.png;*.tif;*.tiff;*.bmp')
 
     def execute(self, context):
-        def set_select(sequence, value):
-            for strip in sequence:
-                strip.select = value
-
         ddslideshow = context.scene.ddslideshow
         has_intro = ddslideshow.intro not in ['', '//']
         has_outro = ddslideshow.outro not in ['', '//']
 
         shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(self.files, self.directory, context)
 
-        set_select(context.sequences, False)
-        set_select(grep(context.sequences, 'IMAGE'), True)
+        deselect(context.sequences)
+        select(grep(image_filter, context.sequences))
         bpy.ops.ddslideshow.overlap_images('INVOKE_DEFAULT')
 
-        set_select(context.sequences, False)
-        set_select(grep(context.sequences, 'IMAGE'), True)
+        deselect(context.sequences)
+        select(grep(image_filter, context.sequences))
         bpy.ops.ddslideshow.add_transforms('INVOKE_DEFAULT')
 
-        set_select(context.sequences, False)
-        selected = list(grep(context.sequences, 'TRANSFORM'))
+        deselect(context.sequences)
+        selected = list(grep(transform_filter, context.sequences))
         start = 1 if has_intro else 0
         end = -1 if has_outro else len(selected)
-        set_select(selected[start:end], True)
+        select(selected[start:end])
 
         bpy.ops.ddslideshow.zoom_transforms('INVOKE_DEFAULT')
         bpy.ops.ddslideshow.pan_transforms('INVOKE_DEFAULT')
 
-        set_select(context.sequences, False)
-        set_select(grep(context.sequences, 'TRANSFORM'), True)
+        deselect(context.sequences)
+        select(grep(transform_filter, context.sequences))
         bpy.ops.ddslideshow.crossfade('INVOKE_DEFAULT')
 
-        set_select(context.sequences, False)
+        deselect(context.sequences)
         bpy.ops.ddslideshow.slideshow_fade_in_out('INVOKE_DEFAULT')
 
         if bpy.ops.ddslideshow.audio_fade_in_out.poll():
@@ -102,6 +100,7 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
 
     def execute(self, context):
         shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(self.files, self.directory, context)
+        select(grep(image_filter, context.sequences))
 
         return {'FINISHED'}
 
@@ -160,6 +159,8 @@ class SEQUENCE_EDITOR_OT_add_transforms(Operator):
     def execute(self, context):
         for strip in context.selected_sequences:
             create_transform(strip)
+
+        select(grep(transform_filter, context.sequences))
 
         return {'FINISHED'}
 
@@ -302,9 +303,10 @@ class SEQUENCE_EDITOR_OT_audio_fade_in_out(Operator):
         audio = context.scene.sequence_editor.sequences.new_sound(
             name=audio,
             filepath=audio,
-            channel=6,
+            channel=7,
             frame_start=1)
-        audio.frame_final_end = context.scene.frame_end
+        if audio.frame_final_end > context.scene.frame_end:
+            audio.frame_final_end = context.scene.frame_end
 
         audio.volume = 0
         audio.keyframe_insert(data_path='volume', frame=1)
