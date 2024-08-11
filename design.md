@@ -19,7 +19,7 @@
     - end frame
     - randomize order
 1. Pan
-    - direction (9-way box, random, cw, ccw)
+    - direction (9-way box, randomize, cw, ccw)
     - amount or auto?
 1. Slideshow fade in/out
     - in duration
