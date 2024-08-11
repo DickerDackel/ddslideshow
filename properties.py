@@ -4,9 +4,9 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty
 
 
 class DDSlideshowProperties(bpy.types.PropertyGroup):
-    intro: bpy.props.StringProperty(name='Intro Slide', subtype='FILE_PATH', default='')
-    outro: bpy.props.StringProperty(name='Outro Slide', subtype='FILE_PATH', default='')
-    audio: bpy.props.StringProperty(name='Audio Track', subtype='FILE_PATH', default='')
+    intro: bpy.props.StringProperty(name='Intro Slide', subtype='FILE_PATH', default='//')
+    outro: bpy.props.StringProperty(name='Outro Slide', subtype='FILE_PATH', default='//')
+    audio: bpy.props.StringProperty(name='Audio Track', subtype='FILE_PATH', default='//')
 
     slide_duration: FloatProperty(subtype='TIME', name='duration', default=5, min=0.0001, soft_min=1, soft_max=10)
     slide_crossfade: FloatProperty(subtype='TIME', name='crossfade', default=3, min=0, soft_min=1, soft_max=5)
