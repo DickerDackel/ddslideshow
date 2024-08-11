@@ -18,7 +18,7 @@ OP_PREFIX = 'ddslideshow'
 
 # If somebody could pretty please explain to me, how to properly call the
 # load_images operator from create_slideshow?
-def shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(file_collection, directory, context):
+def shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(file_collection, directory, context):
     ddslideshow = context.scene.ddslideshow
     fps = context.scene.render.fps
 
@@ -46,21 +46,26 @@ class SEQUENCE_EDITOR_OT_create_slideshow(Operator, ImportHelper):
     bl_idname = f'{OP_PREFIX}.create_slideshow'
     bl_label = 'Run workflow'
 
-    files: CollectionProperty(name="File Path", type=OperatorFileListElement)
+    # Configure ImportHelper
     directory: StringProperty(subtype='DIR_PATH', default='//')
-    filename_ext = ""
+    files: CollectionProperty(name='File Path', type=OperatorFileListElement)
     filter_glob: StringProperty(default='*.jpg;*.png;*.tif;*.tiff;*.bmp')
+    use_filter_image: True
+    filename_ext = ''
+    display_type = 'THUMBNAIL'
 
     def execute(self, context):
         ddslideshow = context.scene.ddslideshow
         has_intro = ddslideshow.intro not in ['', '//']
         has_outro = ddslideshow.outro not in ['', '//']
 
-        shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(self.files, self.directory, context)
+        shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(self.files, self.directory, context)
 
         deselect(context.sequences)
         select(grep(image_filter, context.sequences))
         bpy.ops.ddslideshow.overlap_images('INVOKE_DEFAULT')
+
+        bpy.ops.sequencer.view_all()
 
         deselect(context.sequences)
         select(grep(image_filter, context.sequences))
@@ -91,16 +96,19 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
     bl_idname = f'{OP_PREFIX}.load_images'
     bl_label = 'Load images'
 
-
     # Configure ImportHelper
-    files: CollectionProperty(name="File Path", type=OperatorFileListElement)
     directory: StringProperty(subtype='DIR_PATH', default='//')
-    filename_ext = ""
+    files: CollectionProperty(name='File Path', type=OperatorFileListElement)
     filter_glob: StringProperty(default='*.jpg;*.png;*.tif;*.tiff;*.bmp')
+    use_filter_image: True
+    filename_ext = ''
+    display_type = 'THUMBNAIL'
 
     def execute(self, context):
-        shit_i_cannot_figure_out_how_to_properly_call_load_images__from_create_slideshow(self.files, self.directory, context)
+        shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(self.files, self.directory, context)
         select(grep(image_filter, context.sequences))
+
+        bpy.ops.sequencer.view_all()
 
         return {'FINISHED'}
 
@@ -141,6 +149,8 @@ class SEQUENCE_EDITOR_OT_overlap_images(Operator):
         images[-1].frame_final_duration = slide_duration + slide_crossfade
 
         context.scene.frame_end = images[-1].frame_final_end
+
+        bpy.ops.sequencer.view_all()
 
         return {'FINISHED'}
 
