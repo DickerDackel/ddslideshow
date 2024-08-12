@@ -179,3 +179,63 @@ The behaviour of panning is dependent of the zoom settings
 - A zoom of 1 will disable both zooming and panning.
 - A zoom <= 1 will always anchor the pan at the center of the screen
 - A zoom > 1 will pan the image towards the configured anchor direction.
+
+## Installation
+
+The addon is packaged in the new plugin format that came with the Blender
+4.2 release.
+
+In this early stage, it's not yet registered on the blender add-ons site, but
+that will happen a few tests and a bit of auditing down the road.
+
+So currently, either download the release or clone the github repo to create
+the package yourself.
+
+### Download the release package
+
+Download the latest version from the github release page here:
+
+https://github.com/DickerDackel/ddslideshow/releases
+
+Go to Edit -> Preferences -> Get Extensions
+
+Click the arrow in the top right and at the bottom of the menu "Install from
+disk".
+
+DDslideshow should then appear in the Add-Ons page and already be activated.
+
+### Clone the github repo
+
+```bash
+git clone https://github.com/dickerdackel/ddslideshow
+cd ddslideshow
+blender --command extension build
+```
+
+After that, there will be a zip file ddslideshow-VERSION.zip in the same
+directory.  You can install that the same as the release package described
+above.
+
+## License
+
+MIT License
+
+Copyright (c) 2024 Michael Lamertz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
