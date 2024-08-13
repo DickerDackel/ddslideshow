@@ -328,3 +328,183 @@ class SEQUENCE_EDITOR_OT_audio_fade_in_out(Operator):
         audio.keyframe_insert(data_path='volume', frame=audio.frame_final_end)
 
         return {'FINISHED'}
+
+
+class SEQUENCE_EDITOR_OT_pan_base(Operator):
+    @classmethod
+    def poll(cls, context):
+        selected = context.selected_sequences
+
+        # return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
+        return (selected
+                and all(strip.type == 'TRANSFORM' for strip in selected)
+                and all('zoom_from' in strip for strip in selected)
+                and all('zoom_to' in strip for strip in selected))
+
+class SEQUENCE_EDITOR_OT_pan_start_nw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_nw'
+    bl_label = 'NW'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start nw called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_n(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_n'
+    bl_label = 'N'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start n called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_ne(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_ne'
+    bl_label = 'NE'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start ne called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_w(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_w'
+    bl_label = 'W'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start w called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_0(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_0'
+    bl_label = '0'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start 0 called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_e(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_e'
+    bl_label = 'E'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start e called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_sw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_sw'
+    bl_label = 'SW'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start sw called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_s(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_s'
+    bl_label = 'S'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start s called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_se(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_se'
+    bl_label = 'SE'
+    def execute(self, context):
+        self.report({'INFO'}, 'Start se called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_random(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_random'
+    bl_label = 'Random'
+    def execute(self, context):
+        self.report({'INFO'}, 'Random called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_cw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_cw'
+    bl_label = 'CW'
+    def execute(self, context):
+        self.report({'INFO'}, 'CW called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_start_ccw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_start_ccw'
+    bl_label = 'CCW'
+    def execute(self, context):
+        self.report({'INFO'}, 'CCW called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_nw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_nw'
+    bl_label = 'NW'
+    def execute(self, context):
+        self.report({'INFO'}, 'end nw called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_n(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_n'
+    bl_label = 'N'
+    def execute(self, context):
+        self.report({'INFO'}, 'end n called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_ne(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_ne'
+    bl_label = 'NE'
+    def execute(self, context):
+        self.report({'INFO'}, 'end ne called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_w(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_w'
+    bl_label = 'W'
+    def execute(self, context):
+        self.report({'INFO'}, 'end w called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_0(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_0'
+    bl_label = '0'
+    def execute(self, context):
+        self.report({'INFO'}, 'end 0 called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_e(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_e'
+    bl_label = 'E'
+    def execute(self, context):
+        self.report({'INFO'}, 'end e called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_sw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_sw'
+    bl_label = 'SW'
+    def execute(self, context):
+        self.report({'INFO'}, 'end sw called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_s(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_s'
+    bl_label = 'S'
+    def execute(self, context):
+        self.report({'INFO'}, 'end s called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_se(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_se'
+    bl_label = 'SE'
+    def execute(self, context):
+        self.report({'INFO'}, 'end se called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_random(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_random'
+    bl_label = 'Random'
+    def execute(self, context):
+        self.report({'INFO'}, 'Random called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_cw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_cw'
+    bl_label = 'CW'
+    def execute(self, context):
+        self.report({'INFO'}, 'CW called')
+        return {'FINISHED'}
+
+class SEQUENCE_EDITOR_OT_pan_end_ccw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_end_ccw'
+    bl_label = 'CCW'
+    def execute(self, context):
+        self.report({'INFO'}, 'CCW called')
+        return {'FINISHED'}
