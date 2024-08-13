@@ -9,7 +9,7 @@ from bpy.types import Operator, OperatorFileListElement
 from bpy.props import CollectionProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 
-from .utils import (apply_pan, apply_zoom, create_transform, crossfade,
+from .utils import (apply_pan, create_transform, crossfade,
                     deselect, grep, load_image, select,
                     image_filter, transform_filter)
 
@@ -187,15 +187,43 @@ class SEQUENCE_EDITOR_OT_zoom_transforms(Operator):
                 and all(strip.type == 'TRANSFORM' for strip in selected))
 
     def execute(self, context):
-        ddslideshow = context.scene.ddslideshow
+        scene = bpy.context.scene
+        ddslideshow = scene.ddslideshow
+
+        # setting the value anywhere in the timeline somehow supresses the
+        # calculation of the proper position between keyframes and makes the
+        # image jump at that one frame.  So we need to position the current
+        # frame to the place where we set the value.  Frame position is reset
+        # when the function is finished.
+        current_frame = scene.frame_current
 
         zoom_from = ddslideshow.zoom_from
         zoom_to = ddslideshow.zoom_to
         zoom_randomize = ddslideshow.zoom_randomize
 
         for strip in context.selected_sequences:
-            apply_zoom(strip, zoom_from, zoom_to, zoom_randomize)
+            if zoom_randomize:
+                zoom = choice(((zoom_from, zoom_to),
+                               (zoom_to, zoom_from)))
+            else:
+                zoom = (zoom_from, zoom_to)
 
+            scene.frame_set(strip.frame_final_start)
+            strip.scale_start_x = strip.scale_start_y = zoom[0]
+            strip.keyframe_insert(data_path='scale_start_x', frame=strip.frame_final_start)
+            strip.keyframe_insert(data_path='scale_start_y', frame=strip.frame_final_start)
+
+            scene.frame_set(strip.frame_final_end)
+            strip.scale_start_x = strip.scale_start_y = zoom[1]
+            strip.keyframe_insert(data_path='scale_start_x', frame=strip.frame_final_end)
+            strip.keyframe_insert(data_path='scale_start_y', frame=strip.frame_final_end)
+
+            # Store the randomized values as attributes in the stripo, since I
+            # no idea to get the keyframe data out again
+            strip['zoom_from'] = zoom[0]
+            strip['zoom_to'] = zoom[1]
+
+        scene.frame_set(current_frame)
         return {'FINISHED'}
 
 
