@@ -1,5 +1,15 @@
 # ddslideshow - Create Ken Burns Effect slideshow
 
+With Adobe leaning more and more into AI, I decided to leave Lightroom for
+Darktable, but Darktable doesn't offer the Slideshow feature that Lightroom
+includes.
+
+There are no real alternatives on linux, but I was already using Blender VSE,
+and was somewhat familiar with it, so I came up with this add-on.
+
+It creates a Ken Burns style zooming and panning slideshow with optional intro
+and outro slides, an audio track, and a one-button workflow.
+
 ## Slideshow creation
 
 ### Preparation
