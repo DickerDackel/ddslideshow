@@ -96,8 +96,7 @@ show.
 
 To do this, scroll through the timeline and find images where you want to
 change the zoom values or the pan anchor.  Then select that specific image,
-configure zoom or pan and press `Apply zoom` or `Apply pan` again for this
-single selected image.
+configure zoom or pan and the various directional buttons below the settings.
 
 Note, since the calculation of the panning depends on the zoom, panning also
 needs to be re-applied when the zoom is changed.
@@ -132,7 +131,7 @@ pressing Ctrl-F12.
 
 ## Settings
 
-### Media
+### Media Settings
 
 **intro**, **outro** are image slides that will be placed before and after the
 actual slideshow.  Place your studio logo here, or a slide with descriptive
@@ -140,38 +139,46 @@ text.
 
 **audio** is a music or voice track to accompany the slideshow
 
-### Global settings
-
-**Slideshow fade in/out** gives the time for the fade in and out effect at the
-beginning and end of the slideshow.
-
-**Audio fade in/out** configures the same for the audio track.
-
 ### Per slide settings
 
+#### Slide timing
+
 **duration** is the duration that any slide will be shown unobstrued.
-Crossfading slides is not included in this duration.
+Crossfading slides is added to this duration.
 
 **crossfade** is the duration that 2 images will blend into each other.
 
 The defaults for both should be fine to showcase all images without lingering
 too long.
 
+**Overlap images**, **Add transforms** are the same function as in the
+Workflow description above.
+
+#### Zooming
 **zoom from**, **zoom to** configure the amount of zooming.  The image will zoom
-kkfrom a scale of `zoom from` to a scale of `zoom to` by default.  If you want a
+from a scale of `zoom from` to a scale of `zoom to` by default.  If you want a
 zoom out, just switch the values.  The default will zoom from an unscaled
 image to a scale of 1.5.
 
 **Randomize zoom direction** will randomly switch between zooming in or out for
 each slide.
 
-**Pan** will select the direction of the panning.
+**Apply zoom** again is the same as the Workflow button above.
 
-**Off** - No panning
+**Switch zoom direction** will switch the `zoom_from` and `zoom_to` values for
+the selected strip, to easily toggle a selected image's zoom direction in the
+Fine Tuning step.
+
+#### Panning
+
+**Force downscaled to center** will make sure, an image that is smaller than
+the screen will always be centered.
+
+**From**, **To** define the settings for the start and end of the slide.
 
 **NW**, **N**, **NE**,
 **W**,  **0**, **E**,
-**SW**, **S**, **SE** are anchor points that the image will pan towards.
+**SW**, **S**, **SE** are anchor points that the image will pan from/to.
 
 **Randomize** will select a random direction from above for every slide.
 
@@ -181,8 +188,15 @@ given direction, starting with **N**.
 The behaviour of panning is dependent of the zoom settings
 
 - A zoom of 1 will disable both zooming and panning.
-- A zoom <= 1 will always anchor the pan at the center of the screen
+- A zoom <= 1 will follow the `force downscaled to center` setting.
 - A zoom > 1 will pan the image towards the configured anchor direction.
+
+### Global settings
+
+**Slideshow fade in/out** gives the time for the fade in and out effect at the
+beginning and end of the slideshow.
+
+**Audio fade in/out** configures the same for the audio track.
 
 ## Installation
 
