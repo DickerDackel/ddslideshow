@@ -14,6 +14,7 @@ class DDSlideshowProperties(bpy.types.PropertyGroup):
     zoom_from: FloatProperty(name='Zoom from', default=1, min=0, soft_max=2)
     zoom_to: FloatProperty(name='Zoom to', default=1.5, min=0, soft_max=2)
     zoom_randomize: BoolProperty(name='Randomize zoom direction', default=True)
+    zoom_center_downscaled: BoolProperty(name='Force downscaled to center', default=True)
 
     pan: EnumProperty(name='Pan',
                       default='randomize',

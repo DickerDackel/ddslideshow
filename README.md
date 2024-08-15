@@ -37,6 +37,10 @@ You can click the play button below the timeline window to preview it.
 Instead of "Run all", you can also follow the individual steps in the workflow
 tab.
 
+This is a convenience panel, that gives you all basic operations to create a
+slideshow one after the other.  You will also find the various workflow
+buttons again in the settings section directly with their parameters.
+
 Note: Some workflow steps depend on a proper selection of strips. The
 individual workflow steps try to set a usable selection, e.g. all images after
 the image loading, but you might want to modify this selection.
@@ -44,13 +48,13 @@ the image loading, but you might want to modify this selection.
 **Load images** opens the same file browser as in the `Run all` workflow.
 
 **Overlap images** applies the `Slide duration` and `Slide crossfade` settings
-to the selected images.
+to the selected images.  A clean crossfading will happen further down.
 
 **Add transforms** adds transform strips for each selected image.
 
 **Apply zoom** adds zoom to all selected transform strips.  You might want to
-deselect the transforms for the intro and outro slide.  The Simple generation
-workflow will do that automatically for you.
+deselect the transforms for the intro and outro slide.  The Simple workflow
+above will do that automatically for you.
 
 **Apply pan** will do exactly that.  There are some rules for panning, and it
 is dependent of the zoom settings.  See Settings below.  It's best to leave
@@ -91,7 +95,7 @@ every image.  Both settings can be modified after the creation of the slide
 show.
 
 To do this, scroll through the timeline and find images where you want to
-change the zoom direction or the pan anchor.  Then select that specific image,
+change the zoom values or the pan anchor.  Then select that specific image,
 configure zoom or pan and press `Apply zoom` or `Apply pan` again for this
 single selected image.
 

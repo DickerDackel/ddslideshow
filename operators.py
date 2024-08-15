@@ -1,5 +1,6 @@
 import os.path
 
+from os import basename
 from random import choice
 from itertools import cycle
 
@@ -9,41 +10,14 @@ from bpy.types import Operator, OperatorFileListElement
 from bpy.props import CollectionProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 
-from .utils import (apply_pan, create_transform, crossfade,
-                    deselect, grep, load_image, select,
-                    image_filter, transform_filter)
+from .utils import deselect, grep, select, image_filter, transform_filter
+
 
 OP_PREFIX = 'ddslideshow'
 
 
-# If somebody could pretty please explain to me, how to properly call the
-# load_images operator from create_slideshow?
-def shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(file_collection, directory, context):
-    ddslideshow = context.scene.ddslideshow
-    fps = context.scene.render.fps
-
-    intro = bpy.path.abspath(ddslideshow.intro)
-    outro = bpy.path.abspath(ddslideshow.outro)
-    slide_duration = int(ddslideshow.slide_duration * fps)
-    slide_crossfade = int(ddslideshow.slide_crossfade * fps)
-
-    files = [os.path.join(directory, f.name) for f in file_collection]
-
-    if os.path.isfile(intro):
-        files.insert(0, intro)  # noqa: E701
-
-    if os.path.isfile(outro):
-        files.append(outro)  # noqa: E701
-
-    full_duration = slide_duration + 2 * slide_crossfade
-    images = [load_image(bpy.path.abspath(fname), 1 + i * full_duration, full_duration)
-              for i, fname in enumerate(files)]
-
-    context.scene.frame_end = images[-1].frame_final_end
-
-
-class SEQUENCE_EDITOR_OT_create_slideshow(Operator, ImportHelper):
-    bl_idname = f'{OP_PREFIX}.create_slideshow'
+class SEQUENCE_EDITOR_OT_run_workflow(Operator, ImportHelper):
+    bl_idname = f'{OP_PREFIX}.run_workflow'
     bl_label = 'Run workflow'
 
     # Configure ImportHelper
@@ -55,42 +29,45 @@ class SEQUENCE_EDITOR_OT_create_slideshow(Operator, ImportHelper):
     display_type = 'THUMBNAIL'
 
     def execute(self, context):
-        ddslideshow = context.scene.ddslideshow
+        scene = context.scene
+        ddslideshow = scene.ddslideshow
+
         has_intro = ddslideshow.intro not in ['', '//']
         has_outro = ddslideshow.outro not in ['', '//']
 
-        shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(self.files, self.directory, context)
+        files = [{'name': f.name} for f in self.files]
+        bpy.ops.ddslideshow.load_images(files=files, directory=self.directory)
 
         deselect(context.sequences)
         select(grep(image_filter, context.sequences))
-        bpy.ops.ddslideshow.overlap_images('INVOKE_DEFAULT')
+        bpy.ops.ddslideshow.overlap_images()
+        bpy.ops.ddslideshow.add_transforms()
 
         bpy.ops.sequencer.view_all()
 
         deselect(context.sequences)
-        select(grep(image_filter, context.sequences))
-        bpy.ops.ddslideshow.add_transforms('INVOKE_DEFAULT')
-
-        deselect(context.sequences)
         selected = list(grep(transform_filter, context.sequences))
+
+        # Don't select intro and outro slides for zoom & pan
         start = 1 if has_intro else 0
         end = -1 if has_outro else len(selected)
         select(selected[start:end])
 
-        bpy.ops.ddslideshow.zoom_transforms('INVOKE_DEFAULT')
-        bpy.ops.ddslideshow.pan_transforms('INVOKE_DEFAULT')
+        bpy.ops.ddslideshow.zoom_transforms()
+        bpy.ops.ddslideshow.pan_transforms()
 
         deselect(context.sequences)
         select(grep(transform_filter, context.sequences))
-        bpy.ops.ddslideshow.crossfade('INVOKE_DEFAULT')
+        bpy.ops.ddslideshow.crossfade()
 
         deselect(context.sequences)
-        bpy.ops.ddslideshow.slideshow_fade_in_out('INVOKE_DEFAULT')
+        bpy.ops.ddslideshow.slideshow_fade_in_out()
 
         if bpy.ops.ddslideshow.audio_fade_in_out.poll():
-            bpy.ops.ddslideshow.audio_fade_in_out('INVOKE_DEFAULT')
+            bpy.ops.ddslideshow.audio_fade_in_out()
 
         return {'FINISHED'}
+
 
 class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
     bl_idname = f'{OP_PREFIX}.load_images'
@@ -105,7 +82,42 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
     display_type = 'THUMBNAIL'
 
     def execute(self, context):
-        shit_i_cannot_figure_out_how_to_properly_call_load_images_from_create_slideshow(self.files, self.directory, context)
+        scene = context.scene
+        ddslideshow = scene.ddslideshow
+
+        intro = bpy.path.abspath(ddslideshow.intro)
+        outro = bpy.path.abspath(ddslideshow.outro)
+
+        fps = context.scene.render.fps
+        slide_duration = int(ddslideshow.slide_duration * fps)
+        slide_crossfade = int(ddslideshow.slide_crossfade * fps)
+
+        files = [os.path.join(self.directory, f.name) for f in self.files]
+
+        if os.path.isfile(intro):
+            files.insert(0, intro)  # noqa: E701
+
+        if os.path.isfile(outro):
+            files.append(outro)  # noqa: E701
+
+        full_duration = slide_duration + 2 * slide_crossfade
+
+        def load_image(fname, frame, length):
+            name = basename(fname)
+            image = bpy.context.scene.sequence_editor.sequences.new_image(
+                name=name,
+                filepath=fname,
+                channel=0,
+                frame_start=frame,
+                fit_method='ORIGINAL')
+            image.frame_final_end = frame + length
+
+            return image
+
+        images = [load_image(bpy.path.abspath(fname), 1 + i * full_duration, full_duration)
+                  for i, fname in enumerate(files)]
+        context.scene.frame_end = images[-1].frame_final_end
+
         select(grep(image_filter, context.sequences))
 
         bpy.ops.sequencer.view_all()
@@ -168,7 +180,13 @@ class SEQUENCE_EDITOR_OT_add_transforms(Operator):
 
     def execute(self, context):
         for strip in context.selected_sequences:
-            create_transform(strip)
+            name = f'dds-translate-{strip.name}'
+            bpy.context.scene.sequence_editor.sequences.new_effect(
+                type='TRANSFORM',
+                name=name,
+                channel=strip.channel + 2,
+                seq1=strip,
+                frame_start=strip.frame_final_start)
 
         select(grep(transform_filter, context.sequences))
 
@@ -227,47 +245,102 @@ class SEQUENCE_EDITOR_OT_zoom_transforms(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_pan_transforms(Operator):
-    bl_idname = f'{OP_PREFIX}.pan_transforms'
-    bl_label = 'Apply pan'
+class SEQUENCE_EDITOR_OT_switch_zooms(Operator):
+    bl_idname = f'{OP_PREFIX}.switch_zooms'
+    bl_label = 'Switch zoom direction'
 
     @classmethod
     def poll(cls, context):
         selected = context.selected_sequences
 
         return (selected
-                and all(strip.type == 'TRANSFORM' for strip in selected)
-                and all('zoom_from' in strip for strip in selected)
-                and all('zoom_to' in strip for strip in selected))
+                and all(strip.type == 'TRANSFORM' for strip in selected))
 
     def execute(self, context):
-        ddslideshow = context.scene.ddslideshow
+        scene = bpy.context.scene
 
-        pan_config = ddslideshow.pan
+        current_frame = scene.frame_current
+
+        for strip in context.selected_sequences:
+            scene.frame_set(strip.frame_final_start)
+            zoom_start = strip.scale_start_x
+
+            scene.frame_set(strip.frame_final_end)
+            zoom_end = strip.scale_start_x
+            strip.scale_start_x = strip.scale_start_y = zoom_start
+            strip.keyframe_insert(data_path='scale_start_x', frame=strip.frame_final_end)
+            strip.keyframe_insert(data_path='scale_start_y', frame=strip.frame_final_end)
+
+            scene.frame_set(strip.frame_final_start)
+            strip.scale_start_x = strip.scale_start_y = zoom_end
+            strip.keyframe_insert(data_path='scale_start_x', frame=strip.frame_final_start)
+            strip.keyframe_insert(data_path='scale_start_y', frame=strip.frame_final_start)
+
+
+        bpy.context.view_layer.update()
+        scene.frame_set(current_frame)
+        return {'FINISHED'}
+
+
+class SEQUENCE_EDITOR_OT_pan_transforms(Operator):
+    bl_idname = f'{OP_PREFIX}.pan_transforms'
+    bl_label = 'Apply pan'
+
+    PAN_DIRECTIONS = {'nw': (1, -1), 'n': (0, -1), 'ne': (-1, -1),
+                      'w': (1, 0), '0': (0, 0), 'e': (-1, 0),
+                      'sw': (1, 1), 's': (0, 1), 'se': (-1, 1)}
+    CW = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+    CCW = list(reversed(CW))
+
+    pan_config: StringProperty(default='random')
+    pan_frame: StringProperty(default='both')
+
+    def execute(self, context):
+        scene = context.scene
+        ddslideshow = scene.ddslideshow
 
         selected = context.selected_sequences
-        slen = len(selected)
 
-        pan_directions = {'nw': (1, -1), 'n': (0, -1), 'ne': (-1, -1),
-                          'w': (1, 0), '0': (0, 0), 'e': (-1, 0),
-                          'sw': (1, 1), 's': (0, 1), 'se': (-1, 1)}
-        cw = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
-        ccw = reversed(cw)
+        if self.pan_config == 'cw':
+            directions = cycle(self.PAN_DIRECTIONS[_] for _ in self.CW)
+        elif self.pan_config == 'ccw':
+            directions = cycle(self.PAN_DIRECTIONS[_] for _ in self.CCW)
+        elif self.pan_config == 'random':
+            l = list(self.PAN_DIRECTIONS.values())  # noqa: E741
+            directions = [choice(l) for _ in range(len(selected))]
+        elif self.pan_config in self.PAN_DIRECTIONS:
+            directions = cycle([self.PAN_DIRECTIONS[self.pan_config]])
 
-        if pan_config == 'off':
-            positions = [pan_directions['0'] for _ in range(slen)]
-        elif pan_config == 'randomize':
-            directions = list(pan_directions.values())
-            positions = [choice(directions) for _ in range(slen)]
-        elif pan_config == 'cw':
-            positions = [pan_directions[key] for key, _ in zip(cycle(cw), range(slen))]
-        elif pan_config == 'ccw':
-            positions = [pan_directions[key] for key, _ in zip(cycle(ccw), range(slen))]
-        elif pan_config in pan_directions:
-            positions = [pan_directions[pan_config] for _ in  range(slen)]
+        def apply_pan_and_keyframe(strip, dx, dy, frame):
+            current_frame = scene.frame_current
+            scene.frame_set(frame)
 
-        for strip, (dx, dy) in zip(selected, positions):
-            apply_pan(strip, dx, dy, strip['zoom_from'], strip['zoom_to'])
+            zoom = strip.scale_start_x
+            if zoom < 1 and ddslideshow.zoom_center_downscaled:
+                offset_pct = 0
+            else:
+                # Yes, 100 / 2 == 50, but this here shows the intent
+                offset_pct = (zoom - 1) * 100 / 2
+            self.report({'INFO'}, f'{strip.name}  {frame=}  {zoom=}  {offset_pct=}')
+
+            strip.translate_start_x = dx * offset_pct
+            strip.translate_start_y = dy * offset_pct
+            strip.keyframe_insert(data_path='translate_start_x', frame=frame)
+            strip.keyframe_insert(data_path='translate_start_y', frame=frame)
+
+            scene.frame_set(current_frame)
+
+        for strip, (dx, dy) in zip(selected, directions):
+            if self.pan_frame == 'start':
+                self.report({'INFO'}, f'pan {self.pan_config}: {strip.name} towards {dx}, {dy} at {self.pan_frame}')
+                apply_pan_and_keyframe(strip, dx, dy, strip.frame_final_start)
+            elif self.pan_frame == 'end':
+                self.report({'INFO'}, f'pan {self.pan_config}: {strip.name} towards {dx}, {dy} at {self.pan_frame}')
+                apply_pan_and_keyframe(strip, dx, dy, strip.frame_final_end)
+            else:
+                self.report({'INFO'}, f'pan {self.pan_config}: {strip.name} towards {dx}, {dy} -> {-dx}, {-dy} at {self.pan_frame}')
+                apply_pan_and_keyframe(strip, dx, dy, strip.frame_final_start)
+                apply_pan_and_keyframe(strip, -dx, -dy, strip.frame_final_end)
 
         return {'FINISHED'}
 
@@ -281,13 +354,17 @@ class SEQUENCE_EDITOR_OT_crossfade(Operator):
         return bool(context.selected_sequences)
 
     def execute(self, context):
-        ddslideshow = context.scene.ddslideshow
-        fps = context.scene.render.fps
-
-        slide_crossfade = ddslideshow.slide_crossfade * fps
-
         for strip1, strip2 in zip(context.selected_sequences, context.selected_sequences[1:]):
-            crossfade(strip1, strip2, slide_crossfade)
+            clean_name = strip1.name.removeprefix('dds-translate')
+            name = f'dds-crossfade-{clean_name}'
+            bpy.context.scene.sequence_editor.sequences.new_effect(
+                type='GAMMA_CROSS',
+                name=name,
+                channel=max(strip1.channel, strip2.channel) + 1,
+                seq1=strip1,
+                seq2=strip2,
+                frame_start=strip2.frame_final_start,
+                frame_end=strip1.frame_final_end)
 
         return {'FINISHED'}
 
@@ -369,170 +446,149 @@ class SEQUENCE_EDITOR_OT_pan_base(Operator):
                 and all('zoom_from' in strip for strip in selected)
                 and all('zoom_to' in strip for strip in selected))
 
+
 class SEQUENCE_EDITOR_OT_pan_start_nw(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_nw'
     bl_label = 'NW'
     def execute(self, context):
-        self.report({'INFO'}, 'Start nw called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='nw', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_n(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_n'
     bl_label = 'N'
     def execute(self, context):
-        self.report({'INFO'}, 'Start n called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='n', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_ne(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_ne'
     bl_label = 'NE'
     def execute(self, context):
-        self.report({'INFO'}, 'Start ne called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='ne', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_w(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_w'
     bl_label = 'W'
     def execute(self, context):
-        self.report({'INFO'}, 'Start w called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='w', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_0(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_0'
     bl_label = '0'
     def execute(self, context):
-        self.report({'INFO'}, 'Start 0 called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='0', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_e(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_e'
     bl_label = 'E'
     def execute(self, context):
-        self.report({'INFO'}, 'Start e called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='e', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_sw(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_sw'
     bl_label = 'SW'
     def execute(self, context):
-        self.report({'INFO'}, 'Start sw called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='sw', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_s(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_s'
     bl_label = 'S'
     def execute(self, context):
-        self.report({'INFO'}, 'Start s called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='s', pan_frame='start')
+
 
 class SEQUENCE_EDITOR_OT_pan_start_se(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_se'
     bl_label = 'SE'
     def execute(self, context):
-        self.report({'INFO'}, 'Start se called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='se', pan_frame='start')
 
-class SEQUENCE_EDITOR_OT_pan_start_random(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_start_random'
-    bl_label = 'Random'
-    def execute(self, context):
-        self.report({'INFO'}, 'Random called')
-        return {'FINISHED'}
-
-class SEQUENCE_EDITOR_OT_pan_start_cw(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_start_cw'
-    bl_label = 'CW'
-    def execute(self, context):
-        self.report({'INFO'}, 'CW called')
-        return {'FINISHED'}
-
-class SEQUENCE_EDITOR_OT_pan_start_ccw(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_start_ccw'
-    bl_label = 'CCW'
-    def execute(self, context):
-        self.report({'INFO'}, 'CCW called')
-        return {'FINISHED'}
 
 class SEQUENCE_EDITOR_OT_pan_end_nw(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_nw'
     bl_label = 'NW'
     def execute(self, context):
-        self.report({'INFO'}, 'end nw called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='nw', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_n(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_n'
     bl_label = 'N'
     def execute(self, context):
-        self.report({'INFO'}, 'end n called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='n', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_ne(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_ne'
     bl_label = 'NE'
     def execute(self, context):
-        self.report({'INFO'}, 'end ne called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='ne', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_w(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_w'
     bl_label = 'W'
     def execute(self, context):
-        self.report({'INFO'}, 'end w called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='w', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_0(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_0'
     bl_label = '0'
     def execute(self, context):
-        self.report({'INFO'}, 'end 0 called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='0', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_e(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_e'
     bl_label = 'E'
     def execute(self, context):
-        self.report({'INFO'}, 'end e called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='e', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_sw(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_sw'
     bl_label = 'SW'
     def execute(self, context):
-        self.report({'INFO'}, 'end sw called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='sw', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_s(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_s'
     bl_label = 'S'
     def execute(self, context):
-        self.report({'INFO'}, 'end s called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='s', pan_frame='end')
+
 
 class SEQUENCE_EDITOR_OT_pan_end_se(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_end_se'
     bl_label = 'SE'
     def execute(self, context):
-        self.report({'INFO'}, 'end se called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='se', pan_frame='end')
 
-class SEQUENCE_EDITOR_OT_pan_end_random(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_end_random'
+
+class SEQUENCE_EDITOR_OT_pan_random(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_random'
     bl_label = 'Random'
     def execute(self, context):
-        self.report({'INFO'}, 'Random called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='random', pan_frame='both')
 
-class SEQUENCE_EDITOR_OT_pan_end_cw(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_end_cw'
+
+class SEQUENCE_EDITOR_OT_pan_cw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_cw'
     bl_label = 'CW'
     def execute(self, context):
-        self.report({'INFO'}, 'CW called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='cw', pan_frame='both')
 
-class SEQUENCE_EDITOR_OT_pan_end_ccw(SEQUENCE_EDITOR_OT_pan_base):
-    bl_idname = f'{OP_PREFIX}.pan_end_ccw'
+
+class SEQUENCE_EDITOR_OT_pan_ccw(SEQUENCE_EDITOR_OT_pan_base):
+    bl_idname = f'{OP_PREFIX}.pan_ccw'
     bl_label = 'CCW'
     def execute(self, context):
-        self.report({'INFO'}, 'CCW called')
-        return {'FINISHED'}
+        return bpy.ops.ddslideshow.pan_transforms(pan_config='ccw', pan_frame='both')
