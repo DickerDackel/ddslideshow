@@ -1,18 +1,30 @@
 from bpy.types import Panel
 
 
-class SEQUENCE_EDITOR_PT_run_workflow(Panel):
+class SEQUENCE_EDITOR_PT_run_all(Panel):
     bl_space_type = 'SEQUENCE_EDITOR'
     bl_region_type = 'UI'
     bl_category = 'DDSlideshow'
-    bl_label = 'Workflow'
+    bl_label = 'Run all'
+    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         layout = self.layout
 
         layout.operator('ddslideshow.run_workflow', text='Run all')
 
-        layout.separator()
+
+
+class SEQUENCE_EDITOR_PT_run_workflow(Panel):
+    bl_space_type = 'SEQUENCE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = 'DDSlideshow'
+    bl_label = 'Workflow'
+    bl_options = {'DEFAULT_CLOSED'}
+
+
+    def draw(self, context):
+        layout = self.layout
 
         layout.operator('ddslideshow.load_images', text='Load images')
         layout.operator('ddslideshow.overlap_images', text='Overlap images')
@@ -41,11 +53,10 @@ class SEQUENCE_EDITOR_PT_media(Panel):
         layout.prop(ddslideshow, 'audio')
 
         layout.separator()
-        layout.label(text='Scale and alignment:')
+        layout.label(text='Scale images to video size:')
         layout.prop(ddslideshow, 'scale_method', text='Scale method')
 
-        layout.prop(ddslideshow, 'align_x', text='Horizontal align')
-        layout.prop(ddslideshow, 'align_y', text='Vertical align')
+        layout.separator()
         layout.operator('ddslideshow.load_images')
 
 
@@ -133,6 +144,24 @@ class SEQUENCE_EDITOR_PT_zoom_pan_settings(Panel):
         layout.operator('ddslideshow.pan_random')
         layout.operator('ddslideshow.pan_cw')
         layout.operator('ddslideshow.pan_ccw')
+
+        layout.separator()
+
+        layout.label(text='Align images with incompatible aspect ratio:')
+
+        col = layout.column()
+        row = col.row()
+        row.label(text='')
+        row.operator('ddslideshow.align_images_top')
+        row.label(text='')
+        row = col.row()
+        row.operator('ddslideshow.align_images_left')
+        row.operator('ddslideshow.align_images_center')
+        row.operator('ddslideshow.align_images_right')
+        row = col.row()
+        row.label(text='')
+        row.operator('ddslideshow.align_images_bottom')
+        row.label(text='')
 
 
 class SEQUENCE_EDITOR_PT_transitions(Panel):

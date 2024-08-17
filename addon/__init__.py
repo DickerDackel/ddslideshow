@@ -1,7 +1,8 @@
 import bpy
 
 from .properties import DDSlideshowProperties
-from .panel import (SEQUENCE_EDITOR_PT_run_workflow,
+from .panel import (SEQUENCE_EDITOR_PT_run_all,
+                    SEQUENCE_EDITOR_PT_run_workflow,
                     SEQUENCE_EDITOR_PT_media,
                     SEQUENCE_EDITOR_PT_per_slide,
                     SEQUENCE_EDITOR_PT_zoom_pan_settings,
@@ -22,11 +23,15 @@ from .operators import (SEQUENCE_EDITOR_OT_run_workflow,
                         SEQUENCE_EDITOR_OT_pan_end_nw, SEQUENCE_EDITOR_OT_pan_end_n, SEQUENCE_EDITOR_OT_pan_end_ne,
                         SEQUENCE_EDITOR_OT_pan_end_w, SEQUENCE_EDITOR_OT_pan_end_0, SEQUENCE_EDITOR_OT_pan_end_e,
                         SEQUENCE_EDITOR_OT_pan_end_sw, SEQUENCE_EDITOR_OT_pan_end_s, SEQUENCE_EDITOR_OT_pan_end_se,
-                        SEQUENCE_EDITOR_OT_pan_random, SEQUENCE_EDITOR_OT_pan_cw, SEQUENCE_EDITOR_OT_pan_ccw)
+                        SEQUENCE_EDITOR_OT_pan_random, SEQUENCE_EDITOR_OT_pan_cw, SEQUENCE_EDITOR_OT_pan_ccw,
+                        SEQUENCE_EDITOR_OT_align_images, SEQUENCE_EDITOR_OT_align_images_center,
+                        SEQUENCE_EDITOR_OT_align_images_top, SEQUENCE_EDITOR_OT_align_images_bottom,
+                        SEQUENCE_EDITOR_OT_align_images_left, SEQUENCE_EDITOR_OT_align_images_right)
 
 
 classes = [
     DDSlideshowProperties,
+    SEQUENCE_EDITOR_PT_run_all,
     SEQUENCE_EDITOR_PT_run_workflow,
     SEQUENCE_EDITOR_PT_media,
     SEQUENCE_EDITOR_PT_per_slide,
@@ -49,6 +54,9 @@ classes = [
     SEQUENCE_EDITOR_OT_pan_end_w, SEQUENCE_EDITOR_OT_pan_end_0, SEQUENCE_EDITOR_OT_pan_end_e,
     SEQUENCE_EDITOR_OT_pan_end_sw, SEQUENCE_EDITOR_OT_pan_end_s, SEQUENCE_EDITOR_OT_pan_end_se,
     SEQUENCE_EDITOR_OT_pan_random, SEQUENCE_EDITOR_OT_pan_cw, SEQUENCE_EDITOR_OT_pan_ccw,
+    SEQUENCE_EDITOR_OT_align_images, SEQUENCE_EDITOR_OT_align_images_center,
+    SEQUENCE_EDITOR_OT_align_images_top, SEQUENCE_EDITOR_OT_align_images_bottom,
+    SEQUENCE_EDITOR_OT_align_images_left, SEQUENCE_EDITOR_OT_align_images_right,
 ]
 
 

@@ -7,13 +7,50 @@ from itertools import cycle
 import bpy
 
 from bpy.types import Operator, OperatorFileListElement
-from bpy.props import CollectionProperty, StringProperty
+from bpy.props import CollectionProperty, EnumProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 
 from .utils import deselect, grep, select, image_filter, transform_filter
 
 
 OP_PREFIX = 'ddslideshow'
+
+
+class SEQUENCE_EDITOR_OT_works_on_images(Operator):
+    """Base class for operators that only may run if at least one IMAGE is
+    selected"""
+
+    @classmethod
+    def poll(cls, context):
+        selected = context.selected_sequences
+
+        # return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
+        return (selected and all(strip.type == 'IMAGE' for strip in selected))
+
+
+class SEQUENCE_EDITOR_OT_works_on_transforms(Operator):
+    """Base class for operators that only may run if at least one TRANSFORM is
+    selected"""
+
+    @classmethod
+    def poll(cls, context):
+        selected = context.selected_sequences
+
+        # return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
+        return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
+
+
+class SEQUENCE_EDITOR_OT_pan_base(Operator):
+    """Base class for all the dedicated pan directional buttons"""
+    @classmethod
+    def poll(cls, context):
+        selected = context.selected_sequences
+
+        # return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
+        return (selected
+                and all(strip.type == 'TRANSFORM' for strip in selected)
+                and all('zoom_from' in strip for strip in selected)
+                and all('zoom_to' in strip for strip in selected))
 
 
 class SEQUENCE_EDITOR_OT_run_workflow(Operator, ImportHelper):
@@ -89,8 +126,6 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
         outro = bpy.path.abspath(ddslideshow.outro)
 
         fit_method = ddslideshow.scale_method
-        align_x = ddslideshow.align_x
-        align_y = ddslideshow.align_y
 
         fps = context.scene.render.fps
         slide_duration = int(ddslideshow.slide_duration * fps)
@@ -117,26 +152,6 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
 
             image.frame_final_end = frame + length
 
-            orig_w = image.elements[0].orig_width
-            orig_h = image.elements[0].orig_height
-            scaled_w = orig_w * image.transform.scale_x
-            scaled_h = orig_h * image.transform.scale_y
-
-            dx = (scaled_w - scene.render.resolution_x) / 2
-            dy = (scaled_h - scene.render.resolution_y) / 2
-
-            if dx > 0:
-                if align_x == 'left':
-                    image.transform.offset_x = dx
-                elif align_x == 'right':
-                    image.transform.offset_x = -dx
-
-            if dy > 0:
-                if align_y == 'top':
-                    image.transform.offset_y = -dy
-                elif align_y == 'bottom':
-                    image.transform.offset_y = dy
-
             return image
 
         images = [load_image(bpy.path.abspath(fname), 1 + i * full_duration, full_duration)
@@ -150,16 +165,9 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_overlap_images(Operator):
+class SEQUENCE_EDITOR_OT_overlap_images(SEQUENCE_EDITOR_OT_works_on_images):
     bl_idname = f'{OP_PREFIX}.overlap_images'
     bl_label = 'Overlap images'
-
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_sequences
-
-        return (selected
-                and all(strip.type == 'IMAGE' for strip in selected))
 
     def execute(self, context):
         ddslideshow = context.scene.ddslideshow
@@ -192,16 +200,9 @@ class SEQUENCE_EDITOR_OT_overlap_images(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_add_transforms(Operator):
+class SEQUENCE_EDITOR_OT_add_transforms(SEQUENCE_EDITOR_OT_works_on_images):
     bl_idname = f'{OP_PREFIX}.add_transforms'
     bl_label = 'Add transforms'
-
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_sequences
-
-        return (selected
-                and all(strip.type == 'IMAGE' for strip in selected))
 
     def execute(self, context):
         for strip in context.selected_sequences:
@@ -218,16 +219,9 @@ class SEQUENCE_EDITOR_OT_add_transforms(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_zoom_transforms(Operator):
+class SEQUENCE_EDITOR_OT_zoom_transforms(SEQUENCE_EDITOR_OT_works_on_transforms):
     bl_idname = f'{OP_PREFIX}.zoom_transforms'
     bl_label = 'Apply zoom'
-
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_sequences
-
-        return (selected
-                and all(strip.type == 'TRANSFORM' for strip in selected))
 
     def execute(self, context):
         scene = bpy.context.scene
@@ -270,16 +264,9 @@ class SEQUENCE_EDITOR_OT_zoom_transforms(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_switch_zooms(Operator):
+class SEQUENCE_EDITOR_OT_switch_zooms(SEQUENCE_EDITOR_OT_works_on_transforms):
     bl_idname = f'{OP_PREFIX}.switch_zooms'
     bl_label = 'Switch zoom direction'
-
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_sequences
-
-        return (selected
-                and all(strip.type == 'TRANSFORM' for strip in selected))
 
     def execute(self, context):
         scene = bpy.context.scene
@@ -307,7 +294,7 @@ class SEQUENCE_EDITOR_OT_switch_zooms(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_pan_transforms(Operator):
+class SEQUENCE_EDITOR_OT_pan_transforms(SEQUENCE_EDITOR_OT_works_on_transforms):
     bl_idname = f'{OP_PREFIX}.pan_transforms'
     bl_label = 'Apply pan'
 
@@ -460,18 +447,6 @@ class SEQUENCE_EDITOR_OT_audio_fade_in_out(Operator):
         return {'FINISHED'}
 
 
-class SEQUENCE_EDITOR_OT_pan_base(Operator):
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_sequences
-
-        # return (selected and all(strip.type == 'TRANSFORM' for strip in selected))
-        return (selected
-                and all(strip.type == 'TRANSFORM' for strip in selected)
-                and all('zoom_from' in strip for strip in selected)
-                and all('zoom_to' in strip for strip in selected))
-
-
 class SEQUENCE_EDITOR_OT_pan_start_nw(SEQUENCE_EDITOR_OT_pan_base):
     bl_idname = f'{OP_PREFIX}.pan_start_nw'
     bl_label = 'NW'
@@ -617,3 +592,87 @@ class SEQUENCE_EDITOR_OT_pan_ccw(SEQUENCE_EDITOR_OT_pan_base):
     bl_label = 'CCW'
     def execute(self, context):
         return bpy.ops.ddslideshow.pan_transforms(pan_config='ccw', pan_frame='both')
+
+
+class SEQUENCE_EDITOR_OT_align_images(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images'
+    bl_label = 'Align image'
+
+    align: EnumProperty(name='Alignment',
+                        default='center',
+                        items=[('left', 'Left', ''),
+                               ('center', 'Center', ''),
+                               ('right', 'Right', ''),
+                               ('top', 'Top', ''),
+                               ('middle', 'Middle', ''),
+                               ('bottom', 'Bottom', '')])
+
+    @classmethod
+    def poll(cls, context):
+        selected = context.selected_sequences
+
+        return (selected
+                and all(strip.type == 'IMAGE' for strip in selected))
+
+    def execute(self, context):
+        scene = context.scene
+        selected = context.selected_sequences
+
+        for strip in selected:
+            image = strip.elements[0]
+
+            orig_w = image.orig_width
+            orig_h = image.orig_height
+            scaled_w = orig_w * strip.transform.scale_x
+            scaled_h = orig_h * strip.transform.scale_y
+
+            dx = (scaled_w - scene.render.resolution_x) / 2
+            dy = (scaled_h - scene.render.resolution_y) / 2
+
+            if self.align == 'center':
+                strip.transform.offset_x = strip.transform.offset_y = 0
+            elif self.align == 'left' and dx > 0:
+                strip.transform.offset_x = dx
+            elif self.align == 'right' and dx > 0:
+                strip.transform.offset_x = -dx
+            elif self.align == 'top' and dy > 0:
+                strip.transform.offset_y = -dy
+            elif self.align == 'bottom' and dy > 0:
+                strip.transform.offset_y = dy
+
+        return {'FINISHED'}
+
+
+class SEQUENCE_EDITOR_OT_align_images_center(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images_center'
+    bl_label = 'Center'
+    def execute(self, context):
+        return bpy.ops.ddslideshow.align_images(align='center')
+
+
+class SEQUENCE_EDITOR_OT_align_images_top(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images_top'
+    bl_label = 'Top'
+    def execute(self, context):
+        return bpy.ops.ddslideshow.align_images(align='top')
+
+
+class SEQUENCE_EDITOR_OT_align_images_bottom(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images_bottom'
+    bl_label = 'Bottom'
+    def execute(self, context):
+        return bpy.ops.ddslideshow.align_images(align='bottom')
+
+
+class SEQUENCE_EDITOR_OT_align_images_left(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images_left'
+    bl_label = 'Left'
+    def execute(self, context):
+        return bpy.ops.ddslideshow.align_images(align='left')
+
+
+class SEQUENCE_EDITOR_OT_align_images_right(SEQUENCE_EDITOR_OT_works_on_images):
+    bl_idname = f'{OP_PREFIX}.align_images_right'
+    bl_label = 'Right'
+    def execute(self, context):
+        return bpy.ops.ddslideshow.align_images(align='right')
