@@ -99,19 +99,51 @@ than the slide show.  The options to manually deal with that are:
 
 ### Fine tuning
 
-Since this script doesn't know anything about the point of interest in an
-image, the global settings for zooming and panning might not be adequate for
-every image.  Both settings can be modified after the creation of the slide
-show.
+There are FIXME problems that might require manual intervention.
 
-To do this, scroll through the timeline and find images where you want to
-change the zoom values or the pan anchor.  Then select that specific image,
-configure zoom or pan and the various directional buttons below the settings.
+- The script cannot know what the point of interest in an image is, and
+  panning might shift it out of sight.
+- The image can have a different aspect ratio than the slideshow, and a
+  relevant piece might be out of frame if the default scale mode `Fill` is
+  used.
+- The zoom direction was wrong for the best impact of the image
 
-Note, since the calculation of the panning depends on the zoom, panning also
-needs to be re-applied when the zoom is changed.
+All issues can be fixed with 1 or 2 button clicks.
 
-Repeat this until you're happy with the whole slideshow.
+Scroll through the timeline and find an image you want to modify.
+
+**Click on that image to make it the active object.**  (This is important and
+I forget it all the time myself.)
+
+Then chose one or more of the fixes below and repeat that for all images in
+your timeline that need tuning.
+
+#### Fix zoom
+
+To fix the zoom direction, just click the 'Switch zoom direction' button and
+the image will change from zooming in to zooming out or vice versa.
+
+FIXME is the PAN update still needed?!?
+
+#### Fix panning
+
+If e.g. the point of interest is in  the top left corner, but the image zooms
+into the top right corner, just click the `NW` button in the `To:` section.
+
+#### Fix Alignment
+
+If the aspect ratio of the image is different from the slideshow, it is
+still possible, that the point of interest is still off screen, or at least
+too close to the edge, since the upscaled image will always be aligned to the
+center of the image.
+
+So e.g. if the eyes of a subject are still above the frame, although you have
+anchored the panning to `N`, just press the `Top` button (or one of the other
+options depending on your image) in the Align section.
+
+#### Scale/Zoom/Align cheat sheet
+
+![Cheat sheet](https://github.com/dickerdackel/ddslideshow/blob/master/images/scale-and-align.jpg?raw=true)
 
 ### Exporting
 
@@ -173,7 +205,10 @@ image to a scale of 1.5.
 **Randomize zoom direction** will randomly switch between zooming in or out for
 each slide.
 
-**Apply zoom** again is the same as the Workflow button above.
+**Apply zoom** again is the same as the Workflow button above.  Note, that
+even with a single image selected, the direction will be randomized if the
+option is selected.  If you want to force a specific direction, deselect
+randomize before applying zoom, or use the next button afterwards.
 
 **Switch zoom direction** will switch the `zoom_from` and `zoom_to` values for
 the selected strip, to easily toggle a selected image's zoom direction in the
@@ -197,8 +232,10 @@ given direction, starting with **N**.
 
 The behaviour of panning is dependent of the zoom settings
 
-- A zoom of 1 will disable both zooming and panning.
-- A zoom <= 1 will follow the `force downscaled to center` setting.
+- A zoom of 1 will disable both zooming and panning, since there is nothing to
+  zoom/pan towards.
+- A zoom <= 1 will follow the `force downscaled to center` setting by default.
+  This can be overwritten after the slideshow creation with the Fix workflow.
 - A zoom > 1 will pan the image towards the configured anchor direction.
 
 ### Global settings
@@ -236,7 +273,7 @@ DDslideshow should then appear in the Add-Ons page and already be activated.
 
 ```bash
 git clone https://github.com/dickerdackel/ddslideshow
-cd ddslideshow
+cd ddslideshow/addon
 blender --command extension build
 ```
 
