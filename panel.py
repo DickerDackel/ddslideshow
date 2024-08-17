@@ -39,6 +39,13 @@ class SEQUENCE_EDITOR_PT_media(Panel):
         layout.prop(ddslideshow, 'intro')
         layout.prop(ddslideshow, 'outro')
         layout.prop(ddslideshow, 'audio')
+
+        layout.separator()
+        layout.label(text='Scale and alignment:')
+        layout.prop(ddslideshow, 'scale_method', text='Scale method')
+
+        layout.prop(ddslideshow, 'align_x', text='Horizontal align')
+        layout.prop(ddslideshow, 'align_y', text='Vertical align')
         layout.operator('ddslideshow.load_images')
 
 

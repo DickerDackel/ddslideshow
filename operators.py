@@ -1,6 +1,6 @@
 import os.path
 
-from os import basename
+from os.path import basename
 from random import choice
 from itertools import cycle
 
@@ -88,6 +88,10 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
         intro = bpy.path.abspath(ddslideshow.intro)
         outro = bpy.path.abspath(ddslideshow.outro)
 
+        fit_method = ddslideshow.scale_method
+        align_x = ddslideshow.align_x
+        align_y = ddslideshow.align_y
+
         fps = context.scene.render.fps
         slide_duration = int(ddslideshow.slide_duration * fps)
         slide_crossfade = int(ddslideshow.slide_crossfade * fps)
@@ -109,8 +113,29 @@ class SEQUENCE_EDITOR_OT_load_images(Operator, ImportHelper):
                 filepath=fname,
                 channel=0,
                 frame_start=frame,
-                fit_method='ORIGINAL')
+                fit_method=fit_method)
+
             image.frame_final_end = frame + length
+
+            orig_w = image.elements[0].orig_width
+            orig_h = image.elements[0].orig_height
+            scaled_w = orig_w * image.transform.scale_x
+            scaled_h = orig_h * image.transform.scale_y
+
+            dx = (scaled_w - scene.render.resolution_x) / 2
+            dy = (scaled_h - scene.render.resolution_y) / 2
+
+            if dx > 0:
+                if align_x == 'left':
+                    image.transform.offset_x = dx
+                elif align_x == 'right':
+                    image.transform.offset_x = -dx
+
+            if dy > 0:
+                if align_y == 'top':
+                    image.transform.offset_y = -dy
+                elif align_y == 'bottom':
+                    image.transform.offset_y = dy
 
             return image
 
