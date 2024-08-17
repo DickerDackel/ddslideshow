@@ -143,7 +143,7 @@ options depending on your image) in the Align section.
 
 #### Scale/Zoom/Align cheat sheet
 
-![Cheat sheet](https://github.com/dickerdackel/ddslideshow/blob/master/images/scale-and-align.jpg?raw=true)
+![Cheat sheet](https://github.com/DickerDackel/ddslideshow/blob/main/images/scale-and-align.png)
 
 ### Exporting
 
