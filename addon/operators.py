@@ -207,12 +207,21 @@ class SEQUENCE_EDITOR_OT_add_transforms(SEQUENCE_EDITOR_OT_works_on_images):
     def execute(self, context):
         for strip in context.selected_sequences:
             name = f'dds-translate-{strip.name}'
-            bpy.context.scene.sequence_editor.sequences.new_effect(
-                type='TRANSFORM',
-                name=name,
-                channel=strip.channel + 2,
-                seq1=strip,
-                frame_start=strip.frame_final_start)
+            version = bpy.app.version
+            if version[0] > 4 or version[0] >= 4 and version[1] >= 4:
+                bpy.context.scene.sequence_editor.sequences.new_effect(
+                    type='TRANSFORM',
+                    name=name,
+                    channel=strip.channel + 2,
+                    input1=strip,
+                    frame_start=strip.frame_final_start)
+            else:
+                bpy.context.scene.sequence_editor.sequences.new_effect(
+                    type='TRANSFORM',
+                    name=name,
+                    channel=strip.channel + 2,
+                    seq1=strip,
+                    frame_start=strip.frame_final_start)
 
         select(grep(transform_filter, context.sequences))
 
@@ -369,14 +378,25 @@ class SEQUENCE_EDITOR_OT_crossfade(Operator):
         for strip1, strip2 in zip(context.selected_sequences, context.selected_sequences[1:]):
             clean_name = strip1.name.removeprefix('dds-translate')
             name = f'dds-crossfade-{clean_name}'
-            bpy.context.scene.sequence_editor.sequences.new_effect(
-                type='GAMMA_CROSS',
-                name=name,
-                channel=max(strip1.channel, strip2.channel) + 1,
-                seq1=strip1,
-                seq2=strip2,
-                frame_start=strip2.frame_final_start,
-                frame_end=strip1.frame_final_end)
+            version = bpy.app.version
+            if version[0] > 4 or version[0] >= 4 and version[1] >= 4:
+                bpy.context.scene.sequence_editor.sequences.new_effect(
+                    type='GAMMA_CROSS',
+                    name=name,
+                    channel=max(strip1.channel, strip2.channel) + 1,
+                    input1=strip1,
+                    input2=strip2,
+                    frame_start=strip2.frame_final_start,
+                    frame_end=strip1.frame_final_end)
+            else:
+                bpy.context.scene.sequence_editor.sequences.new_effect(
+                    type='GAMMA_CROSS',
+                    name=name,
+                    channel=max(strip1.channel, strip2.channel) + 1,
+                    seq1=strip1,
+                    seq2=strip2,
+                    frame_start=strip2.frame_final_start,
+                    frame_end=strip1.frame_final_end)
 
         return {'FINISHED'}
 
